@@ -155,6 +155,7 @@ var p2_is_blocking: bool = false
 var char_select_textures: Array[Texture2D] = []
 var char_anim_textures: Array[Texture2D] = []
 var stage_textures: Array[Texture2D] = []
+var _margin_cache: Dictionary = {}
 var splash_bg_tex: Texture2D = null
 var app_icon_tex: Texture2D = null
 var main_menu_bg_tex: Texture2D = null
@@ -234,10 +235,18 @@ func _write_save() -> void:
 
 func _load_first_texture(paths: Array[String]) -> Texture2D:
 	for p in paths:
-		if ResourceLoader.exists(p):
-			var res := load(p)
-			if res is Texture2D:
-				return res
+		var candidates: Array[String] = [p]
+		var fname: String = p.get_file()
+		if fname.length() > 0:
+			# Android'da fayl nomlari katta-kichik harfga sezgir: Char1.png va char1.png boshqa fayllar
+			var cap: String = p.get_base_dir().path_join(fname.substr(0, 1).to_upper() + fname.substr(1))
+			if cap != p:
+				candidates.append(cap)
+		for c in candidates:
+			if ResourceLoader.exists(c):
+				var res := load(c)
+				if res is Texture2D:
+					return res
 	return null
 
 func _prepare_anim_sheet(tex: Texture2D) -> Texture2D:
@@ -328,7 +337,7 @@ func _load_assets() -> void:
 		var final_anim := anim_raw if anim_raw != null else sel_raw
 
 		char_select_textures.append(final_sel)
-		char_anim_textures.append(_prepare_anim_sheet(final_anim))
+		char_anim_textures.append(final_anim)  # fon allaqachon rasmning o'zida olib tashlangan
 
 	stage_textures.clear()
 	for i in range(1, STAGE_COUNT + 1):
@@ -1051,6 +1060,22 @@ func _draw_fighter_sprite(
 	else:
 		draw_rect(Rect2(Vector2(pos.x - 35.0, pos.y - 220.0), Vector2(70.0, 220.0)), tint)
 
+# Spritesheet chegaralari oldindan hisoblangan (telefonda har kadrda skanerlash juda sekin)
+const SHEET_MARGINS: Dictionary = {
+	"Char_anim_1.png": Vector4(241, 76, 29, 14),
+	"Char_anim_2.png": Vector4(353, 80, 27, 10),
+	"Char_anim_3.png": Vector4(289, 90, 23, 14),
+	"Char_anim_4.png": Vector4(239, 76, 15, 14),
+	"Char_anim_5.png": Vector4(391, 70, 63, 30),
+	"Char_anim_6.png": Vector4(313, 72, 13, 4),
+	"Char_anim_7.png": Vector4(313, 70, 31, 14),
+	"Char_anim_8.png": Vector4(293, 82, 21, 6),
+	"Char_anim_9.png": Vector4(297, 74, 35, 14),
+	"Char_anim_10.png": Vector4(267, 76, 21, 10),
+	"Char_anim_11.png": Vector4(289, 70, 29, 10),
+	"Char_anim_12.png": Vector4(283, 78, 33, 6)
+}
+
 # Spritesheetni aniqlab to'g'ri katakchaga kesish (10 ustun x 9 qator)
 func _get_sprite_frame_rect(tex: Texture2D, action: String, anim_t: float) -> Rect2:
 	var w := float(tex.get_width())
@@ -1061,7 +1086,16 @@ func _get_sprite_frame_rect(tex: Texture2D, action: String, anim_t: float) -> Re
 	var right_margin := 0.0
 	var bottom_margin := 0.0
 
-	var img := tex.get_image()
+	var tex_key: int = tex.get_instance_id()
+	var cached_margins: Variant = null
+	if _margin_cache.has(tex_key):
+		cached_margins = _margin_cache[tex_key]
+	elif SHEET_MARGINS.has(tex.resource_path.get_file()):
+		cached_margins = SHEET_MARGINS[tex.resource_path.get_file()]
+
+	var img: Image = null
+	if cached_margins == null:
+		img = tex.get_image()
 	if img != null and not img.is_empty():
 		if img.is_compressed():
 			img.decompress()
@@ -1093,6 +1127,13 @@ func _get_sprite_frame_rect(tex: Texture2D, action: String, anim_t: float) -> Re
 			right_margin = float(maxi(0, iw - max_x - 3))
 			top_margin = float(maxi(0, min_y - 2))
 			bottom_margin = float(maxi(0, ih - max_y - 2))
+		_margin_cache[tex_key] = Vector4(left_margin, top_margin, right_margin, bottom_margin)
+	elif cached_margins != null:
+		var m: Vector4 = cached_margins
+		left_margin = m.x
+		top_margin = m.y
+		right_margin = m.z
+		bottom_margin = m.w
 
 	var grid_w := maxf(10.0, w - left_margin - right_margin)
 	var grid_h := maxf(10.0, h - top_margin - bottom_margin)
