@@ -11,7 +11,7 @@ const GRAVITY: float = 1950.0
 const JUMP_VELOCITY: float = -760.0
 
 # Agar qora siluet kerak bo'lsa true, rangli ko'rinish uchun false
-const SHADOW_SILHOUETTE_MODE: bool = false
+const SHADOW_SILHOUETTE_MODE: bool = true
 
 # Quvvat (energiya) tezliklari (bir soniyada)
 const PASSIVE_ENERGY_RATE: float = 12.0
@@ -997,7 +997,7 @@ func _draw() -> void:
 	if current_state in [GameState.COUNTDOWN, GameState.FIGHTING, GameState.PAUSED, GameState.ROUND_TRANSITION, GameState.MATCH_OVER]:
 		_draw_fighter_sprite(p1_pos, p1_facing, selected_player_idx, p1_action, p1_anim_time, p1_is_dodging)
 		_draw_fighter_sprite(p2_pos, p2_facing, selected_enemy_idx, p2_action, p2_anim_time, p2_is_dodging)
-		_draw_hit_effects()
+		# Zarba effektlari (doira va chiziqlar) olib tashlandi
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
