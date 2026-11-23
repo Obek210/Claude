@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://c2cdbk2ehc4o3"]
+
+[ext_resource type="Script" uid="uid://bfkvktmkwhw4s" path="res://main.gd" id="1_wtcfe"]
+
+[node name="Node2D" type="Node2D" unique_id=742865118]
+position = Vector2(8, -7)
+script = ExtResource("1_wtcfe")
+metadata/_edit_horizontal_guides_ = [-772.0, -478.0]
